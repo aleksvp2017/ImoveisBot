@@ -1,39 +1,50 @@
+process.env.TOKEN = "644446749:AAEAycfQJos04bVm4pCott2ESYR5gSlz0z4";
+if (!process.env.TOKEN){
+    console.log("Por favor, configure variável de ambiente TOKEN com valor do token do telegram (obtido pelo BotFather). Ex: set TOKEN=<valor>");
+    return;
+}
+
 process.env["NTBA_FIX_319"] = 1; //para tirar aviso de erro ao carregar node-telegram
 var TelegramBot = require('node-telegram-bot-api');
-const token = '644446749:AAEAycfQJos04bVm4pCott2ESYR5gSlz0z4';
-//const bot = new TelegramBot(token, {polling: true});
-const bot = new TelegramBot(token, {
-    filepath: false, polling: true
-  });
-
+const bot = new TelegramBot(process.env.TOKEN, {filepath: false, polling: true}); //filepath: false melhoria de performance sugerida pelo desenv
 
 var consign = require('consign');
-consign().include('service').into(bot);
+consign().include('service').include('config').into(bot);
 
-var chatsNotificados = [];
-
+//A cada msg de texto que siga o padrão \buscar <algumacoisa>
 bot.onText(/buscar (.+)/, async (msg, match) => { 
     const chatId = msg.chat.id;
-    const termoABuscar = match[1]; 
-    bot.sendMessage(chatId, "Buscando " + termoABuscar + " no portal Wimóveis pela chave ");
+    if (!bot.config.Permissao.isUsuarioPermitido(msg.from.first_name)){
+        bot.sendMessage(chatId, "Opa, você não tem permissão para usar esse bot");
+        return;
+    } 
 
-    let buscador = bot.service.Buscador;
-    let paginas = await buscador.buscar(termoABuscar);
-
+    let termos = match[1];
+    let paginas = await bot.service.Buscador.buscar(termos);
     if (paginas && paginas.length > 0){
-        bot.sendMessage(chatId, "Encontrados " + paginas.length + " resultados");
-        paginas.forEach(pagina => {bot.sendMessage(chatId, pagina)});
+        //Esse await é para garantir essa msg antes das do resultado
+        await bot.sendMessage(chatId, "Encontrados " + paginas.length + " resultados para " + termos);        
+        paginas.forEach(pagina => {
+            bot.sendMessage(chatId, pagina);
+        });
+    }
+    else if (!paginas){
+        bot.sendMessage(chatId, "Digite o bairro e o tipo de imóvel");
     }
     else{
         bot.sendMessage(chatId, "Nenhuma página encontrada");
-    }       
+    }        
 });
 
-bot.onText(/\/start/, async (msg, match) => { 
-    bot.sendMessage(msg.chat.id, `Olá ${msg.from.first_name}, para usar o ImoveisBot, `+
-    `digite buscar tipo_do_imovel cidade venda_ou_aluguel bairro. Ex: buscar casa venda lago norte brasília`);
+bot.onText(/\/start/, (msg, match) => { 
+    console.log("Começando conversa com " + msg.from.first_name);
+    bot.sendMessage(msg.chat.id, bot.config.Mensagem.obterMensagemBoasVindas(msg.from.first_name));
+    bot.service.Mail.enviar("aleksvp@gmail.com", "Iniciando conversa", "Iniciando conversa com  " + msg.from.first_name);
 });
 
+bot.onText(new RegExp(/^(?!buscar (.+)|\/start).+/), (msg, match) => { 
+    bot.sendMessage(msg.chat.id, "Para buscar, digite buscar seguido do tipo e bairro. Ex: buscar casa lago norte");
+});
 
 
 bot.on('polling_error', (error) => {

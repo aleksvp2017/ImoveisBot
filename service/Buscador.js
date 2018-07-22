@@ -6,10 +6,15 @@ class Buscador{
 
     
 
-    async buscar(termoABuscar) { 
+    async buscar(termosABuscar) { 
+        let mapa = this._app.config.ProcessadorTermos.extrairTermos(termosABuscar);
+
+        if (!mapa["tipoImovel"] || !mapa["bairro"]){
+            return null;
+        }
+
         var options = {
-            url: this._montarURL(termoABuscar),
-            qs: {text: termoABuscar},
+            url: this._montarURL(mapa),
             connection: {
                 rejectUnauthorized: false
             }
@@ -30,9 +35,33 @@ class Buscador{
         return paginas;
     }
 
-    _montarURL(termoABuscar){
-        let url = "https://www.wimoveis.com.br/casas-venda-lago-norte-brasilia.html";
+    _montarURL(mapaParametros){
+        let urlBase = "https://www.wimoveis.com.br/";
+        let separador = "-";
+        
+        let tipoImovel = mapaParametros["tipoImovel"];
+        let bairro = mapaParametros["bairro"];
+        let url = urlBase + tipoImovel.trim() + separador 
+            + bairro.trim().replace(" ", separador);
+        
+        let valorMaximo = mapaParametros["valorMaximo"];
+        let valorMinimo = mapaParametros["valorMinimo"];
+        if (valorMaximo && valorMinimo){
+            url+= separador + mapaParametros["valorMinimoEMaximo"];
+        }
+        else{
+            if (valorMaximo){
+                url += separador + valorMaximo;
+            }
+            if (valorMinimo){
+                url += separador + valorMinimo;
+            }
+        }
 
+
+        url += ".html";
+
+        console.log("URL:", url);
         return url;
     }
 }
