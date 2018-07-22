@@ -32,6 +32,7 @@ class Buscador{
                 paginas = await this._app.service.ParserHTML.obterPaginas(body);
             }
         });
+        paginas["url"] = options.url;
         return paginas;
     }
 

@@ -6,9 +6,9 @@ class ProcessadorTermos
             "lago-sul-brasilia", "sudoeste-brasilia"];
         let tiposImovelExp = [/casa/i, /ap/i, /terreno/i, /lote/i];
         let tiposImovelNome = ["casas", "apartamentos", "terrenos", "terrenos"];
-        let valorMaximoExp = /maximo \d+/i;
+        let valorMaximoExp = /max \d+/i;
         let valorMaximoNome = "menos-#valor-reales";
-        let valorMinimoExp = /minimo \d+/i;
+        let valorMinimoExp = /min \d+/i;
         let valorMinimoNome = "mais-#valor-reales";
         let valorMinimoEMaximoNome = "#minimo-#maximo-reales";
 
@@ -36,7 +36,7 @@ class ProcessadorTermos
         var resultado = expressaoRegular.exec(chave);
         let maximo = 0;
         if (resultado){
-            maximo = resultado[0].replace("maximo","").trim();
+            maximo = resultado[0].replace("max","").trim();
             mapa["valorMaximo"] = valorMaximoNome.replace("#valor", maximo);
         };
 
@@ -44,7 +44,7 @@ class ProcessadorTermos
         resultado = expressaoRegular.exec(chave);
         let minimo = 0;
         if (resultado){
-            minimo = resultado[0].replace("minimo","").trim();
+            minimo = resultado[0].replace("min","").trim();
             mapa["valorMinimo"] = valorMinimoNome.replace("#valor", minimo);
         };
 
